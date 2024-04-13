@@ -47,9 +47,6 @@ void print_wrong_arguments(int argument){
     if(argument == 'k'){
         cerr << "Message does not match with regex " << endl; 
     }
-    else{
-        cerr << "Used unknown argument" << char(argument) << endl;
-    }
 }
 
 void args_switch(int c, Args *args){
