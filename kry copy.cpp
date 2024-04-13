@@ -288,7 +288,7 @@ string sha256_hash(string message){
         vector<uint32_t> block(message_words.begin() + (i * (BLOCK_SIZE / WORD_SIZE)), message_words.begin() + ((i+1) * (BLOCK_SIZE / WORD_SIZE)));
         process_block(block, H);
     }
-    // string hashed_text = convert_hash_words_to_string(H);
+    string hashed_text = convert_hash_words_to_string(H);
     return "hashed_text";
 }
 
