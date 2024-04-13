@@ -4,8 +4,8 @@ TARGET = kry
  
 all: $(TARGET)
  
-$(TARGET): $(TARGET).cpp
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).cpp
+$(TARGET): $(TARGET).cpp $(TARGET).hpp
+	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).cpp $(TARGET).hpp
  
 clean:
 	$(RM) $(TARGET)
