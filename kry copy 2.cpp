@@ -112,7 +112,7 @@ Args parse_args(int argc, char *argv[]){
 
 string read_text_from_std(){
     string message;
-    getline(cin, message, '\0');
+    cin >> message;
     return message;
 }
 
@@ -130,7 +130,7 @@ uint64_t compute_length(string str){
 }
 
 string append_64_bit_padding(string message, uint64_t length){
-    for (size_t i = 7; i >= 0; i--) {
+    for (int i = 7; i >= 0; i--) {
         char byte = (length >> (8 * i)) & 0xFF;
         message += byte;
     }
@@ -138,9 +138,7 @@ string append_64_bit_padding(string message, uint64_t length){
 }
 
 string read_with_padding(){
-    cout << "Started reading";
     string message = read_text_from_std();
-    cout << "Read text";
     message += 128;
     const char zero = 0;
     uint64_t length = compute_length(message);
@@ -154,13 +152,10 @@ string read_with_padding(){
             message += zero;
         }
     }
-    cout << "Added to blabla";
     while((compute_length(message) % BLOCK_SIZE) < LAST_BLOCK_SIZE){
         message += zero;
     }
-    cout << "Padded";
     message = append_64_bit_padding(message, length - IMPLICIT_PADDING_SIZE);
-    cout << "Super padded";
     return message;
 }
 
@@ -216,11 +211,11 @@ void print_messages(vector<uint32_t> message_words){
 
 void process_block(vector<uint32_t> block, uint32_t H[]){
     uint32_t W[64];
-    for(size_t i = 0; i < 16; i++){
+    for(uint32_t i = 0; i < 16; i++){
         W[i] = block[i];
         
     }
-    for(size_t i = 16; i < 64; i++){
+    for(uint32_t i = 16; i < 64; i++){
         W[i] = sigma_1(W[i-2]) + W[i-7] + sigma_0(W[i-15]) + W[i-16];
     }
     uint32_t a = H[0];
@@ -232,7 +227,7 @@ void process_block(vector<uint32_t> block, uint32_t H[]){
     uint32_t g = H[6];
     uint32_t h = H[7];
 
-    for(size_t i = 0; i < 64; i++)
+    for(uint32_t i = 0; i < 64; i++)
     {
         uint32_t T1 = h + sum_1(e) + Ch(e, f, g) + CONSTANTS[i] +W[i];
         uint32_t T2 = sum_0(a) + Maj(a, b, c);
@@ -269,11 +264,12 @@ vector<uint32_t> convert_string_to_words(string message){
 
 string convert_hash_words_to_string(uint32_t H[]){
     string hashed_message = "";
-    for(size_t i = 0; i < 8; i++)
+    for(uint32_t i = 0; i < 8; i++)
     {
+        cout << "Hoho";
         uint32_t word = H[i];
-        for (size_t j = 0; j < 4; j++){
-            hashed_message += (char) (word >> j * FIXED_CHAR_SIZE) & 0xFF;
+        for (uint32_t j = 0; j < 4; j++){
+            hashed_message += (char) (H[i] >> j * 8) & 0xFF;
         }
     }
     return hashed_message;
@@ -284,17 +280,16 @@ string sha256_hash(string message){
     vector<uint32_t> message_words = convert_string_to_words(message);
     init_hash(H);
     uint64_t N = (compute_length(message)) / BLOCK_SIZE;
-    for(size_t i = 0; i < N; i++){
+    for(uint64_t i = 0; i < N; i++){
         vector<uint32_t> block(message_words.begin() + (i * (BLOCK_SIZE / WORD_SIZE)), message_words.begin() + ((i+1) * (BLOCK_SIZE / WORD_SIZE)));
         process_block(block, H);
     }
-    string hashed_text = convert_hash_words_to_string(H);
-    return "hashed_text";
+    string hash_text = convert_hash_words_to_string(H);
+    return hash_text;
 }
 
 void read_and_hash(){
     string message = read_with_padding();
-    cout << "Read";
     cout << "Length " << compute_length(message) << endl;
     string hash_result = sha256_hash(message);
     cout << hash_result << endl;

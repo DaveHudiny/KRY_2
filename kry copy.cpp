@@ -272,7 +272,7 @@ string convert_hash_words_to_string(uint32_t H[]){
     for(size_t i = 0; i < 8; i++)
     {
         uint32_t word = H[i];
-        for (size_t j = 0; j < 4; j++){
+        for (size_t j = 3; j >= 0; j--){
             hashed_message += (char) (word >> j * FIXED_CHAR_SIZE) & 0xFF;
         }
     }
@@ -288,7 +288,7 @@ string sha256_hash(string message){
         vector<uint32_t> block(message_words.begin() + (i * (BLOCK_SIZE / WORD_SIZE)), message_words.begin() + ((i+1) * (BLOCK_SIZE / WORD_SIZE)));
         process_block(block, H);
     }
-    string hashed_text = convert_hash_words_to_string(H);
+    // string hashed_text = convert_hash_words_to_string(H);
     return "hashed_text";
 }
 
