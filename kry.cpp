@@ -158,7 +158,7 @@ string read_with_padding(){
     return message;
 }
 
-void init_hash(unsigned int H[]){
+void init_hash(uint32_t H[]){
     H[0] = 0x6a09e667;
     H[1] = 0xbb67ae85;
     H[2] = 0x3c6ef372;
@@ -169,40 +169,40 @@ void init_hash(unsigned int H[]){
     H[7] = 0x5be0cd19;
 }
 
-unsigned int Ch(unsigned int x, unsigned int y, unsigned int z){
+uint32_t Ch(uint32_t x, uint32_t y, uint32_t z){
     return (x & y) ^ (~x & z);
 }
 
-unsigned int Maj(string x, string y, string z){
+uint32_t Maj(uint32_t x, uint32_t y, uint32_t z){
     return (x & y) ^ (x & z ) ^ (y & z);
 }
 
-unsigned int Rotate_Right(unsigned int word, unsigned int n){
-    unsigned int right_part = (word >> n);
-    unsigned int left_part = (word << (WORD_SIZE - n));
+uint32_t Rotate_Right(uint32_t word, uint32_t n){
+    uint32_t right_part = (word >> n);
+    uint32_t left_part = (word << (WORD_SIZE - n));
     return left_part | right_part;
 }
 
-unsigned int sum_0(unsigned int word){
-    return Rotate_Right (word, 2) ^ Rotate_Right (word, 13) ^ Rotate_Right (word, 22)
+uint32_t sum_0(uint32_t word){
+    return Rotate_Right (word, 2) ^ Rotate_Right (word, 13) ^ Rotate_Right (word, 22);
 }
 
-unsigned int sum_1(unsigned int word){
-    return Rotate_Right (word, 6) ^ Rotate_Right (word, 11) ^ Rotate_Right (word, 25)
+uint32_t sum_1(uint32_t word){
+    return Rotate_Right (word, 6) ^ Rotate_Right (word, 11) ^ Rotate_Right (word, 25);
 }
 
-unsigned int sigma_0(unsigned int word){
-    return Rotate_Right (word, 7) ^ Rotate_Right (word, 18) ^ (word >> 3)
+uint32_t sigma_0(uint32_t word){
+    return Rotate_Right (word, 7) ^ Rotate_Right (word, 18) ^ (word >> 3);
 }
 
-unsigned int sigma_1(unsigned int word){
-    return Rotate_Right (word, 17) ^ Rotate_Right (word, 19) ^ (word >> 10)
+uint32_t sigma_1(uint32_t word){
+    return Rotate_Right (word, 17) ^ Rotate_Right (word, 19) ^ (word >> 10);
     
 }
 
 string sha256_hash(string message){
-    unsigned int H[8];
-    vector<unsigned int> message_words;
+    uint32_t H[8];
+    vector<uint32_t> message_words;
     for (size_t i = 0; i < message.length(); i += 4) {
         uint32_t word = 0;
         for (size_t j = 0; j < 4; j++) {
@@ -214,8 +214,8 @@ string sha256_hash(string message){
         std::bitset<32> hexa(word);
         cout << hexa << " " ;
     }
-    uint64_t 
-    for(uint64_t i = 0; i < )
+    uint64_t N = 2;
+    for(uint64_t i = 0; i < N; i++)
     cout << endl;
     init_hash(H);
     return "";
