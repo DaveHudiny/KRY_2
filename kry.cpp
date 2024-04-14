@@ -23,7 +23,7 @@ typedef struct{
     bool key_set = false;
     string chs = ""; // -m -- MAC checksum for verification or extension attack
     bool chs_set = false;
-    int key_length = 0; // -n -- length of key for attack
+    uint64_t key_length = 0; // -n -- length of key for attack
     bool key_length_set = false;
     string msg_a = ""; // -a -- message for extension attack
     bool msg_a_set = false;
@@ -82,7 +82,7 @@ void args_switch(int c, Args *args){
             args->chs_set = true;
             break;
         case 'n':
-            args->key_length = stoi(optarg);
+            args->key_length = stoll(optarg);
             args->key_length_set = true;
             break;
         case 'a':
@@ -145,7 +145,7 @@ string append_64_bit_padding(string message, uint64_t length){
     return message;
 }
 
-string add_padding(string message){
+string add_padding(string message, uint64_t fake_size_modifier = 0){
     message += 128;
     const char zero = 0;
     uint64_t length = compute_length(message);
@@ -162,7 +162,7 @@ string add_padding(string message){
     while((compute_length(message) % BLOCK_SIZE) < LAST_BLOCK_SIZE){
         message += zero;
     }
-    message = append_64_bit_padding(message, length - IMPLICIT_PADDING_SIZE);
+    message = append_64_bit_padding(message, (length - IMPLICIT_PADDING_SIZE) + fake_size_modifier);
     return message;
 }
 
@@ -335,10 +335,8 @@ int read_and_compare_hash_with_mac(Args args){
     string hash_result = sha256_hash(padded_message);
     string hexa_message = create_hexadecimal(hash_result);
     if(hexa_message != args.chs){
-        cerr << "Checksums are different!" << endl;
         return 1;
     }
-    cerr <<"Checksums are same." << endl;
     return 0;
 }
 
@@ -346,11 +344,9 @@ void init_modified_hash(uint32_t H[], string old_hash){
     for(size_t i = 0; i < 8; i++){
         string word = "";
         for(size_t j = 0; j < 8; j++){
-            word += old_hash[i + j];
+            word += old_hash[i * 8 + j];
         }
-        cout << word << endl;
         H[i] = (uint32_t) stoll(word, 0, 16);
-        cout << "H " << H[i] << endl;
     }
 }
 
@@ -365,18 +361,48 @@ string modified_sha256_hash(string message, uint32_t H[]){
     return hashed_text;
 }
 
+void print_nasty_request(string original_message, string nasty_message, uint64_t key_length){
+    bool padding_part = false;
+    for(size_t i = 0; i < original_message.length(); i++){
+        if(i < key_length){
+            continue;
+        }
+        if(static_cast<unsigned char>(original_message[i]) == 128){
+            padding_part = true;
+        }
+        if(!padding_part){
+            cout << original_message[i];
+        }
+        else{
+            stringstream stream;
+            stream << hex << setw(2) << setfill('0') << (int) (uint8_t) original_message[i];
+            cout << "\\x" << stream.str();
+        }
+    }
+    for(auto &c : nasty_message){
+        cout << c;
+    }
+    cout << endl;
+}
+
+
 int do_extension_attack(Args args){
-    string message = read_text_from_std();
-    message = add_padding(message);
-    message += args.msg_a;
-    message = add_padding(message);
+    string original_message = read_text_from_std();
+    string fake_password = "";
+    for(size_t i = 0; i < args.key_length; i++){
+        fake_password += '1';
+    }
+    original_message = add_padding(fake_password + original_message);
+    string message = args.msg_a;
+    uint64_t fake_size_modifier = compute_length(original_message);
+    message = add_padding(message, fake_size_modifier);
     uint32_t H[8];
     init_modified_hash(H, args.chs);
     string hash_text = modified_sha256_hash(message, H);
     print_hexadecimal(hash_text);
+    print_nasty_request(original_message, args.msg_a, args.key_length);
     return 0;
 }
-
 
 int do_stuff(Args args){
     int returnor;
