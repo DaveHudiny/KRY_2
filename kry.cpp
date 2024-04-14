@@ -20,9 +20,13 @@ typedef struct{
     bool option_v = false; // Task 3 -- verify MAC
     bool option_e = false; // Task 4 -- extension attack
     string key = ""; // -k -- key
+    bool key_set = false;
     string chs = ""; // -m -- MAC checksum for verification or extension attack
+    bool chs_set = false;
     int key_length = 0; // -n -- length of key for attack
+    bool key_length_set = false;
     string msg_a = ""; // -a -- message for extension attack
+    bool msg_a_set = false;
     bool parsed_correctly = true;
 }Args;
 
@@ -45,12 +49,12 @@ void print_help(){
 
 void print_wrong_arguments(int argument){
     if(argument == 'k'){
-        cerr << "Message does not match with regex " << endl; 
+        cerr << "Key does not match with regex " << endl; 
     }
 }
 
 void args_switch(int c, Args *args){
-    regex key_regex_expression("^[A-Fa-f0-9]*$");
+    regex key_regex_expression("^[A-Za-z0-9]*$");
     regex message_regex_expression("^[a-zA-Z0-9!#$%&’\"()*+,\\-.\\/\\\\:;<>=?@\\[\\]\\^_{}|~]*$");
     switch(c){
         case 'c':
@@ -71,12 +75,15 @@ void args_switch(int c, Args *args){
                 print_wrong_arguments(c);
                 args->parsed_correctly = false;
             }
+            args->key_set = true;
             break;
         case 'm':
             args->chs = optarg;
+            args->chs_set = true;
             break;
         case 'n':
             args->key_length = stoi(optarg);
+            args->key_length_set = true;
             break;
         case 'a':
             args->msg_a = optarg;
@@ -84,6 +91,7 @@ void args_switch(int c, Args *args){
                 print_wrong_arguments(c);
                 args->parsed_correctly = false;
             }
+            args->msg_a_set = true;
             break;
         default:
             print_wrong_arguments(c);
@@ -137,8 +145,7 @@ string append_64_bit_padding(string message, uint64_t length){
     return message;
 }
 
-string read_with_padding(){
-    string message = read_text_from_std();
+string add_padding(string message){
     message += 128;
     const char zero = 0;
     uint64_t length = compute_length(message);
@@ -274,6 +281,23 @@ string convert_hash_words_to_string(uint32_t H[]){
     return hashed_message;
 }
 
+void print_hexadecimal(string text){
+    for(size_t i = 0; i < 32; i++){
+        cout << hex << setw(2) << setfill('0') << (int) (uint8_t) text[i];
+    }
+    cout << endl;
+}
+
+string create_hexadecimal(string text){
+    string hexamessage = "";
+    for(size_t i = 0; i < 32; i++){
+        stringstream stream;
+        stream << hex << setw(2) << setfill('0') << (int) (uint8_t) text[i];
+        hexamessage += stream.str();
+    }
+    return hexamessage;
+}
+
 string sha256_hash(string message){
     uint32_t H[8];
     vector<uint32_t> message_words = convert_string_to_words(message);
@@ -287,35 +311,117 @@ string sha256_hash(string message){
     return hashed_text;
 }
 
-void print_hexadecimal(string text){
-    for(size_t i = 0; i < 32; i++){
-        cout << hex << setw(2) << setfill('0') << (int) (uint8_t) text[i];
-    }
-    cout << endl;
-}
-
-void read_and_hash(){
-    string message = read_with_padding();
+int read_and_hash(){
+    string original_message = read_text_from_std();
+    string message = add_padding(original_message);
     string hash_result = sha256_hash(message);
     print_hexadecimal(hash_result);
+    return 0;
 }
 
-void do_stuff(Args args){
+int read_and_hash_with_key(Args args){
+    string original_message = read_text_from_std();
+    string message = args.key + original_message;
+    string padded_message = add_padding(message);
+    string hash_result = sha256_hash(padded_message);
+    print_hexadecimal(hash_result);
+    return 0;
+}
+
+int read_and_compare_hash_with_mac(Args args){
+    string original_message = read_text_from_std();
+    string message = args.key + original_message;
+    string padded_message = add_padding(message);
+    string hash_result = sha256_hash(padded_message);
+    string hexa_message = create_hexadecimal(hash_result);
+    if(hexa_message != args.chs){
+        cerr << "Checksums are different!" << endl;
+        return 1;
+    }
+    cerr <<"Checksums are same." << endl;
+    return 0;
+}
+
+void init_modified_hash(uint32_t H[], string old_hash){
+    for(size_t i = 0; i < 8; i++){
+        string word = "";
+        for(size_t j = 0; j < 8; j++){
+            word += old_hash[i + j];
+        }
+        cout << word << endl;
+        H[i] = (uint32_t) stoll(word, 0, 16);
+        cout << "H " << H[i] << endl;
+    }
+}
+
+string modified_sha256_hash(string message, uint32_t H[]){
+    vector<uint32_t> message_words = convert_string_to_words(message);
+    uint64_t N = (compute_length(message)) / BLOCK_SIZE;
+    for(size_t i = 0; i < N; i++){
+        vector<uint32_t> block(message_words.begin() + (i * (BLOCK_SIZE / WORD_SIZE)), message_words.begin() + ((i+1) * (BLOCK_SIZE / WORD_SIZE)));
+        process_block(block, H);
+    }
+    string hashed_text = convert_hash_words_to_string(H);
+    return hashed_text;
+}
+
+int do_extension_attack(Args args){
+    string message = read_text_from_std();
+    message = add_padding(message);
+    message += args.msg_a;
+    message = add_padding(message);
+    uint32_t H[8];
+    init_modified_hash(H, args.chs);
+    string hash_text = modified_sha256_hash(message, H);
+    print_hexadecimal(hash_text);
+    return 0;
+}
+
+
+int do_stuff(Args args){
+    int returnor;
     if(args.option_c){
-        read_and_hash();
+        returnor = read_and_hash();
+    }
+    else if(args.option_s){
+        if(!args.key_set){
+            cerr << "You have to write key when using option -s." << endl;
+            returnor = 1;
+        }
+        else{
+            returnor = read_and_hash_with_key(args);
+        }
+    }
+    else if(args.option_v){
+        if(args.chs_set && args.key_set){
+            returnor = read_and_compare_hash_with_mac(args);
+        }
+        else{
+            cerr << "You have to set parameters -k and -m with option -v." << endl;
+            returnor = 2;
+        }
+    }
+    else if(args.option_e){
+        if(args.chs_set && args.key_length_set && args.msg_a_set){
+            returnor = do_extension_attack(args);
+        }
+        else{
+            cerr << "You have to set parameters -n, -m and -a if using parameter e.";
+            returnor = 1;
+        }
     }
     else{
         cerr << "not implemented yet" << endl; //TODO
-    }
+        returnor = 1;
+    } 
+
+    return returnor;
 }
 
 int main(int argc, char *argv[]){
     Args parsed_args = parse_args(argc, argv);
     if(parsed_args.parsed_correctly){
-        do_stuff(parsed_args);
+        return do_stuff(parsed_args);
     }
-    else{
-        return 1;
-    }
-    return 0;
+    return 1;
 }
