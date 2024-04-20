@@ -1,5 +1,10 @@
-#include <iostream>
+/**
+ * @file kry.hpp
+ * @author David Hudák (xhudak03@vutbr.cz)
+ * @brief Header file for kry.cpp
+ */
 
+#include <iostream>
 #include <getopt.h>
 #include <string.h>
 #include <gmp.h>

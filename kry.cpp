@@ -1,3 +1,9 @@
+/**
+ * @file kry.cpp
+ * @author David Hudák (xhudak03@vutbr.cz)
+ * @brief Implementation of SHA256 hashing algorithm for school subject kryptography at BUT FIT.
+ */
+
 #include "kry.hpp"
 
 using namespace std;
@@ -43,14 +49,22 @@ void print_all_arguments(Args args){
 }
 
 void print_help(){
-    cerr << "Usage of program: " << endl;
-    cerr << "TODO" << endl;
+    cout << "Hello, welcome to implementation of SHA256 hashing algorithm for school subjet kryptography at BUT FIT." << endl;
+    cout << "Usage: ./kry [options]" << endl;
+    cout << "Options:" << endl;
+    cout << " -c Compute checksum" << endl; 
+    cout << " -s Compute MAC, have to be combined with argument -k KEY, where KEY is the key for communication." << endl;
+    cout << " -v Verify MAC, have to be combined with arguments -k KEY and -m MAC, where KEY is the key for communication and MAC is the obtained checksum." << endl;
+    cout << " -e Extension attack, have to be combined with arguments -n LENGTH, -m MAC and -a MESSAGE";
+    cout << " where LENGTH is the length of the key, MAC is the obtained checksum and MESSAGE is the message for extension attack." << endl;
+    cout << endl;
+    cout << "Input messages are read from standard input (e.g. echo -ne \"hello\" | ./kry -c)." << endl;
+    cout << endl;
+    cout << "Author: David Hudák, xhudak03@vutbr.cz" << endl;
 }
 
 void print_wrong_arguments(int argument){
-    if(argument == 'k'){
-        cerr << "Key does not match with regex " << endl; 
-    }
+    cerr << "Input does not correspond to given regular expression." << endl;
 }
 
 void args_switch(int c, Args *args){
@@ -94,7 +108,6 @@ void args_switch(int c, Args *args){
             args->msg_a_set = true;
             break;
         default:
-            print_wrong_arguments(c);
             args->parsed_correctly = false;
             break;
         }
@@ -103,12 +116,16 @@ void args_switch(int c, Args *args){
 Args parse_args(int argc, char *argv[]){
     Args args;
     int c;
-
+    if(argc < 2){
+        print_help();
+        args.parsed_correctly = false;
+        return args;
+    }
     while(args.parsed_correctly && (c = getopt(argc, argv, "csvek:m:n:a:")) != -1){
         args_switch(c, &args);
     }
     int count_options = args.option_c + args.option_e + args.option_s + args.option_v;
-    if(count_options != 1){
+    if(args.parsed_correctly && count_options != 1){
         cerr << "Different number of selected tasks. Should be 1, is " << count_options << "." << endl;
         args.parsed_correctly = false;
     }
@@ -437,7 +454,7 @@ int do_stuff(Args args){
         }
     }
     else{
-        cerr << "not implemented yet" << endl; //TODO
+        cerr << "You have to select one of the four parameters: c, s, v or e." << endl;
         returnor = 1;
     } 
 
